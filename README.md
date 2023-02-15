@@ -1,6 +1,6 @@
 # OC Projet 10 maîtriser votre infrastructure Cloud
 
-Ce script permet de créer les ressources pour répondre au projet 10 de création d'infrastructure dans le cloud :
+Ce script permet de créer les ressources pour répondre au projet 10 de création d'infrastructure dans le cloud
 
 ## Scénario 
 
