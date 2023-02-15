@@ -1,0 +1,1017 @@
+#############################################
+# Maitrisez votre infrastructure Cloud  P10 #
+#############################################
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Projet 10 AWS Architecture WordPress By Adonis NOAILE 
+
+Parameters:
+  
+  VpcCIDR:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: doit etre une plage IP (notation CIDR) valide de la forme x.x.x.x/x
+    Default: "172.16.0.0/16"
+    Description: Merci d'entrer la plage IP (notation CIDR) pour ce VPC
+    Type: String
+
+  PublicSubnetACIDR:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: doit etre une plage IP (notation CIDR) valide de la forme x.x.x.x/x
+    Default: 172.16.1.0/24
+    Description: Merci d'entrer la plage IP (notation CIDR) pour le sous-reseau public A
+    Type: String
+
+  PublicSubnetBCIDR:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: doit etre une plage IP (notation CIDR) valide de la forme x.x.x.x/x
+    Default: 172.16.2.0/24
+    Description: Merci d'entrer la plage IP (notation CIDR) pour le sous-reseau public B
+    Type: String
+
+  PublicSubnetCCIDR:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: doit etre une plage IP (notation CIDR) valide de la forme x.x.x.x/x
+    Default: 172.16.3.0/24
+    Description: Merci d'entrer la plage IP (notation CIDR) pour le sous-reseau public C
+    Type: String
+
+  PrivateSubnetACIDR:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: doit etre une plage IP (notation CIDR) valide de la forme x.x.x.x/x
+    Default: 172.16.4.0/24
+    Description: Merci d'entrer la plage IP (notation CIDR) pour le sous-reseau prive A
+    Type: String
+
+  PrivateSubnetBCIDR:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: doit etre une plage IP (notation CIDR) valide de la forme x.x.x.x/x
+    Default: 172.16.5.0/24
+    Description: Merci d'entrer la plage IP (notation CIDR) pour le sous-reseau prive B 
+    Type: String
+
+  PrivateSubnetCCIDR:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: doit etre une plage IP (notation CIDR) valide de la forme x.x.x.x/x
+    Default: 172.16.6.0/24
+    Description: Merci d'entrer la plage IP (notation CIDR) pour le sous-réseau prive C
+    Type: String
+
+  RemoteIPPublic:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})'
+    ConstraintDescription: doit etre une adresse IP valide de la forme x.x.x.x
+    Default: 89.95.207.10
+    Description: Addresse IP Public du VPN distant (IP de la ligne qui heberge la vm vmware)
+    Type: String
+
+  RemoteLanIP:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: doit etre une plage IP (notation CIDR) valide de la forme x.x.x.x/x 
+    Default: 10.0.0.0/24
+    Description: Addresse reseau du LAN distant (CIDR vmware)
+    Type: String
+
+  VPNPrivateIP:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})' 
+    ConstraintDescription: doit etre une adresse IP valide de la forme x.x.x.x
+    Default: 172.16.6.100
+    Description: Addresse IP privee du VPN AWS( cidr subnet pirvate C)
+    Type: String
+
+  IntranetPrivateIP:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})'
+    ConstraintDescription: doit etre une adresse IP valide de la forme x.x.x.x
+    Default: 172.16.6.10
+    Description: Addresse IP privee Intranet
+    Type: String   
+  
+  
+  WireguardPrivateKey:
+    Description: Cle privee Wireguard
+    Type: String
+    Default: MGI63vIdF7u/g8csDUAGa6ixKa9bSFVCJnW+/A5+rlo=
+
+  WireguardPublicKey:   
+    Description: Cle public Wireguard
+    Type: String
+    Default: /S+30Vidx5DSrJ8Nhr+ibJKe2016ZyzUwriqc1nnB3A=
+
+  RemoteWireguardPublicKey: 
+    Description: Cle publique du Wireguard distant
+    Type: String
+    Default: O73LGvBSZm3Exf6eUQmolsNB8ht+r7sKqxnkAWqgDwg=
+
+  DBUser:
+    Description: Utilisateur de la BDD
+    Default: wpuser
+    Type: String  
+
+  DBPassword:
+    Description: Mot de passe de la BDD
+    Default: Wordpress1-
+    Type: String
+
+  DBName:
+    Description: Nom de la BDD
+    Default: wpdb
+    Type: String  
+
+  BucketNameCreated:
+    Description: Nom du bucket a creer
+    Default: wpbucketadonis
+    Type: String
+
+  WordpressUserAdmin:
+    Description: Wordpress User Name
+    Default: wpadmin
+    Type: String
+
+  WordpressPasswordAdmin:
+    Description: Wordpress Admin Password
+    Default: Wordpress1-
+    Type: String
+
+  EmailNotification:
+    Description: Adresse mail pour les notifications AWS
+    Default: adonisnoaile@gmail.com
+    Type: String  
+
+Resources:
+
+  ########################################
+  # Déploiement du VPC: réseau 10.0.0.0  #
+  ########################################
+  
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10'
+
+  ################################################################
+  # Déclaration de la passerelle Internet et association au VPC  #
+  ################################################################
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties: 
+      Tags:
+      - Key: Name
+        Value: vpc-p10-InternetGateway
+
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  ######################################################################################
+  # Création des subnets public - 2 subnets pour Wordpress - 1 subnet pour l'intranet  #
+  ######################################################################################
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-west-1a
+      CidrBlock: !Ref PublicSubnetACIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-public-01'
+      VpcId: !Ref VPC
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-west-1b
+      CidrBlock: !Ref PublicSubnetBCIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-public-02'    
+      VpcId: !Ref VPC
+
+  PublicSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-west-1c
+      CidrBlock: !Ref PublicSubnetCCIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-public-03'
+      VpcId: !Ref VPC
+
+  #####################################################
+  # Création de la table de routage du subnet public  #
+  #####################################################
+
+  PublicRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-route-public-01'
+
+  PublicRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-route-public-02'
+
+  PublicRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-route-public-03'
+
+  ######################################################################
+  # Association du sous-réseau public avec la table de routage public  #
+  ######################################################################
+  
+  Public01AttachPublicRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      SubnetId: !Ref PublicSubnetA
+
+  Public02AttachPublicRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTableB
+      SubnetId: !Ref PublicSubnetB
+  
+  Public03AttachPublicRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTableC
+      SubnetId: !Ref PublicSubnetC
+
+  ######################################################################## 
+  # Ajout d'une route aux tables de routage public vers InternetGateway  #
+  ########################################################################
+  
+  PublicRouteA:
+    Type: AWS::EC2::Route
+    Properties: 
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTableA
+
+  PublicRouteB:
+    Type: AWS::EC2::Route
+    Properties: 
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTableB
+
+  PublicRouteC:
+    Type: AWS::EC2::Route
+    Properties: 
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTableC                
+
+
+  ######################################################################################
+  # Création des subnets privés - 2 subnets pour Wordpress - 1 subnet pour l'intranet  #
+  ######################################################################################
+  
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-west-1a
+      CidrBlock: !Ref PrivateSubnetACIDR
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-private-01'
+      VpcId: !Ref VPC
+
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-west-1b
+      CidrBlock: !Ref PrivateSubnetBCIDR
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-private-02'    
+      VpcId: !Ref VPC
+
+  PrivateSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: eu-west-1c
+      CidrBlock: !Ref PrivateSubnetCCIDR
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-private-03'    
+      VpcId: !Ref VPC
+
+  ##########################################################################
+  # Création d'une Ip élastique pour la passerelle NAT du subnet public C  # 
+  ##########################################################################
+
+  NatEip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-eip'
+
+  NatGateway:
+    DependsOn: AttachInternetGateway
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatEip.AllocationId
+      SubnetId: !Ref PublicSubnetC
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-nat-c'
+
+  ######################################################
+  # Création des tables de routage des subnets privés  #
+  ######################################################
+  
+  PrivateRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-route-private-01'
+
+  PrivateRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-route-private-02'
+
+  PrivateRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-route-private-03'
+
+  ##################################################################
+  # Association des subnets privés avec la table de routage privé  #
+  ##################################################################
+  
+  Private01AttachPrivateRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableA
+      SubnetId: !Ref PrivateSubnetA
+
+  Private02AttachPrivateRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableB
+      SubnetId: !Ref PrivateSubnetB
+
+  Private03AttachPrivateRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableC
+      SubnetId: !Ref PrivateSubnetC
+
+  ####################################################################
+  # Ajout d'une route à la table de routage privé C vers NatGateway  #
+  ####################################################################
+
+  PrivateRouteC:
+    Type: AWS::EC2::Route
+    Properties: 
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+      RouteTableId: !Ref PrivateRouteTableC
+
+  #########################################
+  # Déclaration du Subnet Group pour RDS  #
+  #########################################
+
+  RDSSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet Group using subnets from 2 AZs
+      DBSubnetGroupName: RDS-Subnet
+      SubnetIds:
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB     
+
+  ######################################################
+  # Création des Groupes de Sécurité Wordpress et RDS  #
+  ######################################################
+
+  WordpressEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: HTTP & SSH
+      GroupName: WordpressSecurityGroup 
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - IpProtocol: 'tcp'
+          CidrIp: 0.0.0.0/0
+          FromPort: 80
+          ToPort: 80
+        - IpProtocol: 'tcp'
+          CidrIp: 0.0.0.0/0
+          FromPort: 22
+          ToPort: 22  
+      VpcId: !Ref VPC
+
+  WordpressLoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Wordpress LoadBalancer security group 
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress: 
+        - IpProtocol: 'tcp'
+          CidrIp: 0.0.0.0/0   
+          FromPort: 80
+          ToPort: 80    
+      VpcId: !Ref VPC
+
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS-SG
+      GroupName: RdsSecurityGroup
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: 'tcp'
+          FromPort: 3306
+          ToPort: 3306
+      VpcId: !Ref VPC
+      
+  #######################################
+  # Création du Groupe de Sécurité VPN  #
+  #######################################
+
+  VPNEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: PING & VPN access SSH
+      GroupName: VPNSecurityGroup 
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - IpProtocol: 'icmp'
+          CidrIp: 0.0.0.0/0
+          FromPort: -1
+          ToPort: -1
+        - IpProtocol: 'tcp'
+          CidrIp: 0.0.0.0/0
+          FromPort: 22
+          ToPort: 22
+        - IpProtocol: 'tcp'
+          CidrIp: 0.0.0.0/0
+          FromPort: 2049
+          ToPort: 2049    
+      VpcId: !Ref VPC
+
+  ############################################
+  # Création du Groupe de Sécurité Intranet  #
+  ############################################
+
+  IntranetEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Intranet HTTP, SSH & NFS
+      GroupName: IntranetSecurityGroup 
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - IpProtocol: 'icmp'
+          CidrIp: 0.0.0.0/0
+          FromPort: -1
+          ToPort: -1
+        - IpProtocol: 'tcp'
+          CidrIp: 0.0.0.0/0
+          FromPort: 2049
+          ToPort: 2049  
+        - IpProtocol: 'tcp'
+          CidrIp: 0.0.0.0/0
+          FromPort: 80
+          ToPort: 80
+        - IpProtocol: 'tcp'
+          CidrIp: 0.0.0.0/0 
+          FromPort: 22
+          ToPort: 22  
+      VpcId: !Ref VPC
+
+  ###########################################
+  # Création du Groupe de Sécurité Bastion  #
+  ###########################################
+
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Bastion access SSH
+      GroupName: BastionSecurityGroup 
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - IpProtocol: 'tcp'
+          CidrIp: 0.0.0.0/0
+          FromPort: 22
+          ToPort: 22  
+      VpcId: !Ref VPC
+
+  
+  ########################
+  # Email notifications  #
+  ########################     
+
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: !Ref EmailNotification
+          Protocol: email            
+  
+  ######################################
+  # Création IAM + Rôle pour accès S3  #
+  ######################################
+
+  wpuser:
+    Type: AWS::IAM::User
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+
+  wpaccesskey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName:
+        !Ref wpuser
+
+
+  AccessKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties: 
+      Description: !Sub "These are the credentials for the IAM User ${wpuser}"
+      SecretString: !Join
+        - ""
+        - - '{"AccessKeyId":"'
+          - !Ref wpaccesskey
+          - '","SecretAccessKey":"'
+          - !GetAtt wpaccesskey.SecretAccessKey
+          - '"}'
+
+  #########################################
+  # Création du bucket S3 pour Wordpress  #
+  #########################################
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Description: Creation du bucket Amazon S3
+    Properties:
+      BucketName: !Ref BucketNameCreated
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+    DeletionPolicy: Delete
+  ##############################
+  # Création du Load Balancer  #
+  ##############################
+  
+  WordpressLoadBalancer:
+    DependsOn: 
+      - PublicSubnetA
+      - PublicSubnetB
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref WordpressLoadBalancerSecurityGroup
+      Subnets:
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+              
+#########################################
+# Configuration des EC2 pour Wordpress  #
+#########################################
+              
+  WordpressLaunchConfig: 
+    Type: AWS::AutoScaling::LaunchConfiguration
+    DependsOn: 
+      - RDSDB
+      - WordpressLoadBalancer
+    Properties:
+      AssociatePublicIpAddress: true
+      ImageId: ami-089f338f3a2e69431
+      InstanceType: t2.micro
+      KeyName: key_vpc
+      SecurityGroups:
+      - !Ref WordpressEC2SecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update -y
+          sudo apt-get install docker.io docker-compose -y
+          sudo systemctl start docker
+          sudo systemctl enable --now docker
+          sudo usermod -aG docker admin
+          newgrp docker
+          cat <<-EOF > /home/admin/docker-compose.yml
+          version: '2'
+          services:
+            wordpress:
+              image: wordpress:php8.2-apache
+              ports:
+                - "80:80"
+              restart: always
+              volumes:
+                - wordpress:/var/www/html
+              environment:
+                WORDPRESS_DB_HOST: ${RDSDB.Endpoint.Address}
+                WORDPRESS_DB_USER: ${DBUser}
+                WORDPRESS_DB_PASSWORD: ${DBPassword}
+            wordpress-cli:
+              depends_on:
+                - wordpress
+              image: wordpress:cli
+              user: "33:33"
+              command: wp core install --title="Mon Infrastructure Cloud avec Docker et Wordpress" --admin_name=${WordpressUserAdmin}  --admin_password=${WordpressPasswordAdmin} --admin_email=${EmailNotification}  --url=${WordpressLoadBalancer.DNSName}
+              volumes:
+                - wordpress:/var/www/html
+              environment:
+                WORDPRESS_DB_HOST: ${RDSDB.Endpoint.Address}
+                WORDPRESS_DB_USER: ${DBUser}
+                WORDPRESS_DB_PASSWORD: ${DBPassword}
+          volumes:
+            wordpress:
+          EOF
+          docker-compose -f /home/admin/docker-compose.yml up -d
+
+
+  ###################################
+  # Mise en place de l'autoscaling  #
+  ###################################
+
+  WordpressScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchConfigurationName: !Ref WordpressLaunchConfig
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 300
+      AvailabilityZones:
+        - Fn::Select:
+          - 0
+          - Fn::GetAZs: !Ref AWS::Region
+        - Fn::Select:
+          - 1
+          - Fn::GetAZs: !Ref AWS::Region
+      VPCZoneIdentifier: 
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+      DesiredCapacity: 2
+      MaxSize: 4
+      MinSize: 2
+      TargetGroupARNs:
+        - !Ref WordpressTargetGroup
+      NotificationConfigurations:
+      - TopicARN:
+          Ref: NotificationTopic
+        NotificationTypes:
+          - autoscaling:EC2_INSTANCE_LAUNCH
+          - autoscaling:EC2_INSTANCE_LAUNCH_ERROR
+          - autoscaling:EC2_INSTANCE_TERMINATE
+          - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
+
+  ##############################
+  # Configuration du Load Balancer  #
+  ##############################
+
+  WordpressTargetGroup: 
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      Properties: 
+        Port: 80
+        Protocol: HTTP
+        VpcId: !Ref VPC  
+        TargetGroupAttributes:
+        - Key: stickiness.enabled
+          Value: true
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: 300      
+   
+
+  WordpressLoadBlancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties: 
+      LoadBalancerArn: !Ref WordpressLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref WordpressTargetGroup
+
+  #############################################
+  # AutoScaling Policy and alarms definition  #
+  #############################################
+
+  AppScaleUpPolicy:
+    DependsOn: WordpressScalingGroup
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref WordpressScalingGroup
+      Cooldown: '300'
+      ScalingAdjustment: 1
+
+  AppScaleDownPolicy:
+    DependsOn: WordpressScalingGroup
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref WordpressScalingGroup
+      Cooldown: '300'
+      ScalingAdjustment: -1
+  
+  ##############################################################
+  # Création des alarmes en cas de hausse et de baisse du CPU  #
+  ##############################################################
+
+  CPUAlarmHigh:
+    DependsOn: WordpressScalingGroup
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Scale-up if CPU > 80% for 5 minutes
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 80
+      AlarmActions: [!Ref AppScaleUpPolicy]
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref WordpressScalingGroup
+      ComparisonOperator: GreaterThanThreshold
+
+  CPUAlarmLow:
+    DependsOn: WordpressScalingGroup
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Scale-down if CPU < 60% for 5 minutes
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 60
+      AlarmActions: [!Ref AppScaleDownPolicy]
+      Dimensions:
+      - Name: AutoScalingGroupName
+        Value: !Ref WordpressScalingGroup
+      ComparisonOperator: LessThanThreshold        
+
+  #############################################
+  # Création de la base de données Wordpress  #
+  #############################################
+
+  RDSDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AutoMinorVersionUpgrade: true
+      DBInstanceClass: db.t2.micro
+      DBName: wordpress
+      DBInstanceIdentifier: wordpress
+      Engine: MariaDB
+      MasterUsername: !Ref DBUser
+      MasterUserPassword: !Ref DBPassword
+      MultiAZ: true
+      AllocatedStorage: 20
+      BackupRetentionPeriod: 2
+      PreferredBackupWindow: 02:00-03:00
+      PreferredMaintenanceWindow: mon:03:00-mon:04:00
+      DBSubnetGroupName: !Ref RDSSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      Tags:
+        - Key: Name
+          Value: wordpress
+
+  REPLICADB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AvailabilityZone: eu-west-1b
+      SourceDBInstanceIdentifier: !Ref RDSDB
+      DBInstanceClass: db.t2.micro
+      Tags:
+        - Key: Name
+          Value: replica wordpress  
+  
+  ####################################
+  # Création de l'instance Intranet  #
+  ####################################
+
+  IntranetEC2:
+    DependsOn: VpnEC2   
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-089f338f3a2e69431
+      InstanceType: t2.micro
+      SubnetId: !Ref PrivateSubnetC
+      PrivateIpAddress: !Ref IntranetPrivateIP
+      SourceDestCheck: false
+      SecurityGroupIds:
+        - !Ref IntranetEC2SecurityGroup
+      KeyName : key_vpc
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          
+          # Création d'une route de l'Intranet vers le LAN
+          sudo tee /etc/network/if-up.d/route.sh << EOF 
+          #!/bin/bash 
+          ip route add 192.168.1.0/24 via 10.0.100.10
+          ip route add 172.16.0.0/24 via 10.0.100.10
+          ip link set dev eth0 mtu 1420
+          EOF
+
+          sudo chmod +x /etc/network/if-up.d/route.sh
+          sudo ./etc/network/if-up.d/route.sh
+
+          # Setup
+          sudo apt-get update -y
+
+          # Installation du serveur Apache
+          sudo apt-get install apache2 -y
+          sudo mkdir -p /var/www/html/nfs
+          
+          sudo apt-get install -y nfs-common
+          
+          sudo echo "192.168.1.52:/var/share/p10 /var/www/html/nfs nfs rw,sync,hard,intr 0 0" | tee -a /etc/fstab > /dev/null 2>&1
+          sudo mount -a
+          
+          sudo mv /var/www/html/index.html /var/www/html/index.html.orig
+
+          # Création de la page Intranet
+          cat << 'EOF' > /var/www/html/index.html
+          <!DOCTYPE html>
+          <html lang="fr">
+          <meta charset="utf-8">
+          <title> OpenClassRooms - Bienvenue sur l'intranet du P10 </title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+          <meta name="author" content="Dominique BRETON"/>
+          </head>
+
+          <body>
+          <center><h1><font color="007bff" > Intranet du P10 </font></h1></center>
+          <p>Vous travaillez dans une petite entreprise qui se développe àl'international. L'entreprise ne dispose que de quelques machines pour la gestion de ses outils internes et pour héberger son site internet. Des incidents matériels sur le serveur de messagerie ont pénalisé l'entreprise le mois dernier. Le directeur veut éviter que la situation ne se reproduise mais réalise que fiabiliser les services en interne coûterait très cher.</p>
+          <p>L'entreprise décide donc de migrer l'ensemble de son SI vers le 
+          cloud. Les outils collaboratifs seront migrés vers Google Apps et le site de l'entreprise sera hébergé sur AWS.</p>
+          <p>L'entreprise garde simplement un serveur de fichiers dans ses locaux pour profiter de la vitesse du réseau local pour le transfert de fichiers volumineux. Ce serveur est également accessible par une liaison VPN depuis un site intranet privé hébergé sur AWS.</p>
+
+          <div>
+          <img src="/nfs/image.png" alt="OpenClassRooms P10" >
+          </div>
+          </body>
+          </html>
+          EOF
+
+          chown www-data:www-data /var/www/html/index.html
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-intranet'
+
+  ###############################
+  # Création de l'instance VPN  #
+  ###############################  
+
+  VpnEC2:
+    DependsOn: 
+      - PrivateRouteC 
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-089f338f3a2e69431
+      InstanceType: t2.micro
+      SubnetId: !Ref PrivateSubnetC
+      PrivateIpAddress: !Ref VPNPrivateIP
+      SourceDestCheck: false
+      SecurityGroupIds:
+        - !Ref VPNEC2SecurityGroup
+      KeyName : key_vpc
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          
+          # Setup
+          sudo apt-get update -y
+          sudo apt-get upgrade -y
+          sudo apt-get install wireguard -y wireguard-dkms -y wireguard-tools -y net-tools -y iptables -y linux-headers-$(uname -r)
+          sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+          # Activation du forwarding
+          sudo sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+          sudo sysctl -p /etc/sysctl.conf
+
+          # Création de la clé public pour wireguard
+          sudo touch /etc/wireguard/publickey
+          sudo cat > /etc/wireguard/publickey << EOF
+          ${WireguardPublicKey}
+          EOF
+          
+          # Création de la clé privée pour wireguard
+          sudo touch /etc/wireguard/privatekey
+          sudo cat > /etc/wireguard/privatekey << EOF
+          ${WireguardPrivateKey}
+          EOF
+          
+          # Configuration du fichier wg0.conf de wireguard
+          sudo touch /etc/wireguard/wg0.conf 
+          sudo cat > /etc/wireguard/wg0.conf << EOF
+          # Set up Wireguard VPN by editing/creating wg0.conf
+          [Interface]
+          # Client ip address
+          Address = 172.16.0.2/24
+          SaveConfig = true
+          # Client listen port
+          ListenPort = 51820
+          # private key
+          PrivateKey = ${WireguardPrivateKey}
+          
+          PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+          PostDown = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+
+          [Peer]
+          # Remote server public key 
+          PublicKey = ${RemoteWireguardPublicKey}
+
+          # set ACL
+          AllowedIPs = 172.16.0.1/32, 192.168.1.0/24
+
+          # Remote server's public IPv4 and portserver
+          # Endpoint = ${RemoteIPPublic}:51820
+
+          # Key connection alive
+          # PersistentKeepalive = 25
+          EOF
+
+          systemctl enable wg-quick@wg0.service
+          systemctl start wg-quick@wg0.service
+
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-vpn'
+
+  ###################################
+  # Création de l'instance Bastion  #
+  ###################################  
+
+  BastionEC2: 
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-089f338f3a2e69431
+      InstanceType: t2.micro
+      SubnetId: !Ref PublicSubnetC
+      SourceDestCheck: false
+      SecurityGroupIds:
+        - !Ref BastionSecurityGroup
+      KeyName : key_vpc
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo apt-get update -y
+
+      Tags:
+        - Key: Name
+          Value: 'vpc-p10-bastion'
