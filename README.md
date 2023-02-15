@@ -1,12 +1,12 @@
 ####### infrastructure-creation-in-aws ##############
 
-This script creates the following resources:
+Ce script permet de créer les ressources suivantes :
 
-An EC2 instance for the WordPress server, launched in a public subnet, associated with a security group to open port 80 and launched with a Docker command to run the WordPress server.
-An Auto Scaling group for the WordPress server EC2 instances, configured to monitor CPU load and launch additional instances if the load exceeds 80% on average over 5 minutes.
-An EC2 instance for the VPN server, launched in a public subnet and associated with a security group to open the necessary ports for the VPN link.
-A set of resources to configure the VPN link between the VPN server and the AWS private subnet, including a Customer Gateway, a Virtual Private Gateway, a VPN connection, and a route for the private subnet traffic.
-An output for the WordPress server URL and the public IP address of the VPN server.
+Une instance EC2 pour le serveur WordPress, lancée dans un sous-réseau public, associée à un groupe de sécurité pour ouvrir le port 80 et lancée avec une commande Docker pour exécuter le serveur WordPress.
+Un groupe Auto Scaling pour les instances EC2 du serveur WordPress, configuré pour surveiller la charge CPU et lancer des instances supplémentaires si la charge dépasse 80% en moyenne sur 5 minutes.
+Une instance EC2 pour le serveur VPN, lancée dans un sous-réseau public et associée à un groupe de sécurité pour ouvrir les ports nécessaires pour la liaison VPN.
+Un ensemble de ressources pour configurer la liaison VPN entre le serveur VPN et le sous-réseau privé AWS, comprenant un Customer Gateway, un Virtual Private Gateway, une connexion VPN et une route pour le trafic du sous-réseau privé.
+Une sortie pour l'URL du serveur WordPress et l'adresse IP publique du serveur VPN.
 
 
 #############################################
